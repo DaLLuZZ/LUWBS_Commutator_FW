@@ -1,6 +1,6 @@
 #MicroXplorer Configuration settings - do not modify
-CAD.formats=
-CAD.pinconfig=
+CAD.formats=[]
+CAD.pinconfig=Dual
 CAD.provider=
 ETH.IPParameters=MediaInterface,RxMode
 ETH.MediaInterface=HAL_ETH_RMII_MODE
@@ -320,3 +320,4 @@ VP_SYS_VS_tim1.Signal=SYS_VS_tim1
 VP_WWDG_VS_WWDG.Mode=WWDG_Activate
 VP_WWDG_VS_WWDG.Signal=WWDG_VS_WWDG
 board=custom
+rtos.0.ip=FREERTOS
