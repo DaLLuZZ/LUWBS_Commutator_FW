@@ -47,16 +47,18 @@
 
 /* LwIP Stack Parameters (modified compared to initialization value in opt.h) -*/
 /* Parameters set in STM32CubeMX LwIP Configuration GUI -*/
-/*----- Value in opt.h for LWIP_DHCP: 0 -----*/
-#define LWIP_DHCP 1
+/*----- Default Value for MEMP_NUM_UDP_PCB: 4 ---*/
+#define MEMP_NUM_UDP_PCB 2
+/*----- Default Value for MEMP_NUM_TCP_PCB: 5 ---*/
+#define MEMP_NUM_TCP_PCB 3
 /*----- Value in opt.h for MEM_ALIGNMENT: 1 -----*/
 #define MEM_ALIGNMENT 4
 /*----- Default Value for MEM_SIZE: 1600 ---*/
-#define MEM_SIZE 65536
+#define MEM_SIZE 16384
 /*----- Default Value for MEMP_NUM_PBUF: 16 ---*/
-#define MEMP_NUM_PBUF 256
-/*----- Value in opt.h for MEMP_NUM_SYS_TIMEOUT: (LWIP_TCP + IP_REASSEMBLY + LWIP_ARP + (2*LWIP_DHCP) + LWIP_AUTOIP + LWIP_IGMP + LWIP_DNS + (PPP_SUPPORT*6*MEMP_NUM_PPP_PCB) + (LWIP_IPV6 ? (1 + LWIP_IPV6_REASS + LWIP_IPV6_MLD) : 0)) -*/
-#define MEMP_NUM_SYS_TIMEOUT 5
+#define MEMP_NUM_PBUF 128
+/*----- Default Value for MEMP_NUM_RAW_PCB: 4 ---*/
+#define MEMP_NUM_RAW_PCB 5
 /*----- Value in opt.h for LWIP_ETHERNET: LWIP_ARP || PPPOE_SUPPORT -*/
 #define LWIP_ETHERNET 1
 /*----- Value in opt.h for LWIP_DNS_SECURE: (LWIP_DNS_SECURE_RAND_XID | LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING | LWIP_DNS_SECURE_RAND_SRC_PORT) -*/
@@ -72,17 +74,17 @@
 /*----- Value in opt.h for LWIP_NETIF_LINK_CALLBACK: 0 -----*/
 #define LWIP_NETIF_LINK_CALLBACK 1
 /*----- Value in opt.h for TCPIP_THREAD_STACKSIZE: 0 -----*/
-#define TCPIP_THREAD_STACKSIZE 1024
+#define TCPIP_THREAD_STACKSIZE 4096
 /*----- Value in opt.h for TCPIP_THREAD_PRIO: 1 -----*/
 #define TCPIP_THREAD_PRIO 24
 /*----- Value in opt.h for TCPIP_MBOX_SIZE: 0 -----*/
 #define TCPIP_MBOX_SIZE 6
 /*----- Value in opt.h for SLIPIF_THREAD_STACKSIZE: 0 -----*/
-#define SLIPIF_THREAD_STACKSIZE 1024
+#define SLIPIF_THREAD_STACKSIZE 2048
 /*----- Value in opt.h for SLIPIF_THREAD_PRIO: 1 -----*/
 #define SLIPIF_THREAD_PRIO 3
 /*----- Value in opt.h for DEFAULT_THREAD_STACKSIZE: 0 -----*/
-#define DEFAULT_THREAD_STACKSIZE 1024
+#define DEFAULT_THREAD_STACKSIZE 4096
 /*----- Value in opt.h for DEFAULT_THREAD_PRIO: 1 -----*/
 #define DEFAULT_THREAD_PRIO 3
 /*----- Value in opt.h for DEFAULT_UDP_RECVMBOX_SIZE: 0 -----*/
@@ -91,6 +93,8 @@
 #define DEFAULT_TCP_RECVMBOX_SIZE 6
 /*----- Value in opt.h for DEFAULT_ACCEPTMBOX_SIZE: 0 -----*/
 #define DEFAULT_ACCEPTMBOX_SIZE 6
+/*----- Default Value for LWIP_TCP_KEEPALIVE: 0 ---*/
+#define LWIP_TCP_KEEPALIVE 1
 /*----- Value in opt.h for RECV_BUFSIZE_DEFAULT: INT_MAX -----*/
 #define RECV_BUFSIZE_DEFAULT 2000000000
 /*----- Default Value for LWIP_STATS: 0 ---*/
@@ -119,7 +123,83 @@
 #define CHECKSUM_CHECK_ICMP6 0
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
-
+#define LWIP_DEBUG
+/*----- Value in opt.h for LWIP_TCP_KEEPALIVE: 0 -----*/
+#define LWIP_TCP_KEEPALIVE 1
+/*----- Value in opt.h for ARP_TABLE_SIZE: 10 -----*/
+#define ARP_TABLE_SIZE 20
+/*----- Value in opt.h for LWIP_BROADCAST_PING: 0 -----*/
+#define LWIP_BROADCAST_PING 1
+/*----- Value in opt.h for LWIP_MULTICAST_PING: 0 -----*/
+#define LWIP_MULTICAST_PING 1
+/*----- Value in opt.h for LWIP_DBG_TYPES_ON: LWIP_DBG_ON -----*/
+#define LWIP_DBG_TYPES_ON (LWIP_DBG_ON | LWIP_DBG_TRACE)
+/*----- Value in opt.h for ETHARP_DEBUG: LWIP_DBG_OFF -----*/
+#define ETHARP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for NETIF_DEBUG: LWIP_DBG_OFF -----*/
+#define NETIF_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for PBUF_DEBUG: LWIP_DBG_OFF -----*/
+#define PBUF_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for API_LIB_DEBUG: LWIP_DBG_OFF -----*/
+#define API_LIB_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for API_MSG_DEBUG: LWIP_DBG_OFF -----*/
+#define API_MSG_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for SOCKETS_DEBUG: LWIP_DBG_OFF -----*/
+#define SOCKETS_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for ICMP_DEBUG: LWIP_DBG_OFF -----*/
+#define ICMP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for IGMP_DEBUG: LWIP_DBG_OFF -----*/
+#define IGMP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for INET_DEBUG: LWIP_DBG_OFF -----*/
+#define INET_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for IP_DEBUG: LWIP_DBG_OFF -----*/
+#define IP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for IP_REASS_DEBUG: LWIP_DBG_OFF -----*/
+#define IP_REASS_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for RAW_DEBUG: LWIP_DBG_OFF -----*/
+#define RAW_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for MEM_DEBUG: LWIP_DBG_OFF -----*/
+#define MEM_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for MEMP_DEBUG: LWIP_DBG_OFF -----*/
+#define MEMP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for SYS_DEBUG: LWIP_DBG_OFF -----*/
+#define SYS_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TIMERS_DEBUG: LWIP_DBG_OFF -----*/
+#define TIMERS_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_INPUT_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_INPUT_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_FR_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_FR_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_RTO_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_RTO_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_RTO_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_CWND_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_WND_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_WND_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_OUTPUT_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_OUTPUT_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_RST_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_RST_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCP_QLEN_DEBUG: LWIP_DBG_OFF -----*/
+#define TCP_QLEN_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for UDP_DEBUG: LWIP_DBG_OFF -----*/
+#define UDP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for TCPIP_DEBUG: LWIP_DBG_OFF -----*/
+#define TCPIP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for SLIP_DEBUG: LWIP_DBG_OFF -----*/
+#define SLIP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for DHCP_DEBUG: LWIP_DBG_OFF -----*/
+#define DHCP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for AUTOIP_DEBUG: LWIP_DBG_OFF -----*/
+#define AUTOIP_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for DNS_DEBUG: LWIP_DBG_OFF -----*/
+#define DNS_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for IP6_DEBUG: LWIP_DBG_OFF -----*/
+#define IP6_DEBUG LWIP_DBG_OFF
+/*----- Value in opt.h for DHCP6_DEBUG: LWIP_DBG_OFF -----*/
+#define DHCP6_DEBUG LWIP_DBG_OFF
 /* USER CODE END 1 */
 
 #ifdef __cplusplus

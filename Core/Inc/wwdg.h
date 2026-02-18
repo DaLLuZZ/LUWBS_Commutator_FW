@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "stm32f4xx_hal_wwdg.h"
 /* USER CODE END Includes */
 
 extern WWDG_HandleTypeDef hwwdg;
@@ -41,7 +41,7 @@ extern WWDG_HandleTypeDef hwwdg;
 void MX_WWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void WDT_Feed(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -41,12 +41,20 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+extern const uint32_t IP_ADDR[4];
+extern const uint32_t NETMASK[4];
+extern const uint32_t GATEWAY[4];
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define DBG_PRINTF(x...)                                                       \
+do                                                                             \
+{                                                                              \
+  printf("DBG | %s (file: %s, line: %d): ", __FUNCTION__, __FILE__, __LINE__); \
+  printf(x);                                                                   \
+  printf("\n");                                                              \
+} while(0)                                                                     \
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -73,6 +81,8 @@ void Error_Handler(void);
 #define R_D_VP_GPIO_Port GPIOG
 #define LED_RED_Pin GPIO_PIN_14
 #define LED_RED_GPIO_Port GPIOB
+#define R_C_VN_Pin GPIO_PIN_2
+#define R_C_VN_GPIO_Port GPIOG
 #define R_C_VP_Pin GPIO_PIN_3
 #define R_C_VP_GPIO_Port GPIOG
 #define R_A_AP_Pin GPIO_PIN_8

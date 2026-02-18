@@ -21,7 +21,6 @@
 #include "cmsis_os.h"
 #include "lwip.h"
 #include "usart.h"
-#include "wwdg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -36,7 +35,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#ifdef __GNUC__
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,7 +50,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+const uint32_t IP_ADDR[4] = { 192, 168,   1,  26 };
+const uint32_t NETMASK[4] = { 255, 255, 255,   0 };
+const uint32_t GATEWAY[4] = {   0,   0,   0,   0 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,7 +64,15 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+PUTCHAR_PROTOTYPE
+{
+	if (ch == '\n')
+	{
+		uint8_t r = '\r';
+		HAL_UART_Transmit(&huart2, (uint8_t*)&r, 1, 0xFFFF);
+	}
+  HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, 0xFFFF);
+}
 /* USER CODE END 0 */
 
 /**
@@ -90,10 +103,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_WWDG_Init();
-  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  DBG_PRINTF("USART initialized");
   /* USER CODE END 2 */
 
   /* Init scheduler */
