@@ -48,13 +48,13 @@ extern const uint32_t GATEWAY[4];
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define DBG_PRINTF(x...)                                                       \
-do                                                                             \
-{                                                                              \
-  printf("DBG | %s (file: %s, line: %d): ", __FUNCTION__, __FILE__, __LINE__); \
-  printf(x);                                                                   \
-  printf("\n");                                                              \
-} while(0)                                                                     \
+#define DBG_PRINTF(x...)                                                            \
+do                                                                                  \
+{                                                                                   \
+    printf("DBG | %s (file: %s, line: %d): ", __FUNCTION__, __FILE__, __LINE__);    \
+    printf(x);                                                                      \
+    printf("\n");                                                                   \
+} while(0)
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

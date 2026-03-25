@@ -335,8 +335,9 @@ static void lcd_ip_config_process_move(lcd_ctx_t* lcd_ctx)
     }
 }
 
-static void lcd_ip_config_process_exit(lcd_ctx_t* lcd_ctx, uint8_t* new_ip)
+static void lcd_ip_config_process_save(lcd_ctx_t* lcd_ctx)
 {
+    uint8_t new_ip[4];
     uint16_t _new_ip[4];
     sscanf(lcd_ctx->lcd_line_main, LCD_IP_ADDR_FORMAT_STRING, &_new_ip[0], &_new_ip[1], &_new_ip[2], &_new_ip[3]);
 
@@ -345,6 +346,23 @@ static void lcd_ip_config_process_exit(lcd_ctx_t* lcd_ctx, uint8_t* new_ip)
     for (uint8_t i = 0; i < sizeof(new_ip); i++)
     {
         new_ip[i] = (uint8_t)(_new_ip[i] & 0xFF);
+    }
+
+    // TODO: save the result to NVS and apply it
+    switch (lcd_ctx->lcd_state)
+    {
+        case LCD_STATE_CONFIG_IP_ADDRESS:
+        {
+            break;
+        }
+        case LCD_STATE_CONFIG_SUBNET_MASK:
+        {
+            break;
+        }
+        case LCD_STATE_CONFIG_GATEWAY:
+        {
+            break;
+        }
     }
 }
 
@@ -433,6 +451,35 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
             }
             break;
         }
+        case LCD_STATE_CONFIG_IP_ADDRESS:
+        case LCD_STATE_CONFIG_SUBNET_MASK:
+        case LCD_STATE_CONFIG_GATEWAY:
+        {
+            if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
+            {
+                lcd_ip_config_process_inc(lcd_ctx);
+                lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
+                lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+            }
+            else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
+            {
+                lcd_ip_config_process_save(lcd_ctx); // save new value from the main lcd line to NVS and apply it
+
+                lcd_set_state(lcd_ctx, lcd_ctx->lcd_state - (LCD_STATE_CONFIG_IP_ADDRESS - LCD_STATE_SHOW_IP_ADDRESS));
+                lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
+            }
+            else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
+            {
+                lcd_ip_config_process_move(lcd_ctx);
+                lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
+                lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+            }
+            else
+            {
+                lcd_ip_config_process_idle(lcd_ctx);
+            }
+            break;
+        }
         case LCD_STATE_CONFIG_IP_MODE:
         {
             if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
@@ -450,37 +497,6 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
             {
                 // TODO: handle mode switching
                 lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
-            }
-            break;
-        }
-        case LCD_STATE_CONFIG_IP_ADDRESS:
-        case LCD_STATE_CONFIG_SUBNET_MASK:
-        case LCD_STATE_CONFIG_GATEWAY:
-        {
-            if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
-            {
-                lcd_ip_config_process_inc(lcd_ctx);
-                lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
-                lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
-            }
-            else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
-            {
-                uint8_t new_ip[4];
-                lcd_ip_config_process_exit(lcd_ctx, new_ip); // get new value from the main lcd line
-                // TODO: save the result to NVS and apply it
-
-                lcd_set_state(lcd_ctx, lcd_ctx->lcd_state - (LCD_STATE_CONFIG_IP_ADDRESS - LCD_STATE_SHOW_IP_ADDRESS));
-                lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
-            }
-            else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
-            {
-                lcd_ip_config_process_move(lcd_ctx);
-                lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
-                lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
-            }
-            else
-            {
-                lcd_ip_config_process_idle(lcd_ctx);
             }
             break;
         }
