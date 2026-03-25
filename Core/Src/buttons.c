@@ -39,6 +39,12 @@ static uint8_t lcd_buf_a[32];
 static uint8_t lcd_buf_b[32];
 static lcd_ctx_t lcd_ctx = {
     .lcd_state = LCD_STATE_INVALID,
+    .lcd_timestamp_ms = 0,
+    .lcd_cursor = {
+        .pos = 0,
+        .blink = 0,
+        .reserved = 0,
+    },
     .lcd_upd_flag = 0,
     .lcd_line_main = (char*)lcd_buf_a,
     .lcd_line_secondary = (char*)lcd_buf_b,
@@ -183,7 +189,7 @@ static void button_process_state(button_ctx_t* button_ctx)
 
 static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
 {
-    if (lcd_ctx->lcd_state == new_state || new_state > LCD_STATE_INVALID)
+    if (lcd_ctx->lcd_state == new_state || new_state == LCD_STATE_INVALID || new_state >= LCD_STATE_UNKNOWN)
     {
         return; // nothing to do
     }
@@ -194,15 +200,18 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
     {
         case LCD_STATE_SHOW_IP_ADDRESS:
         {
-            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, "%03u.%03u.%03u.%03u ", 192, 168, 0, 1);
+            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, 192, 168, 0, 1);
             snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [EDIT]  [>]");
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
         case LCD_STATE_CONFIG_IP_ADDRESS:
         {
-            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, "%03u.%03u.%03u.%03u ", 192, 168, 0, 1);
-            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[^]  [SAVE]  [>]");
+            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, 192, 168, 0, 1);
+            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[+]  [SAVE]  [>]");
+            lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
+            lcd_ctx->lcd_cursor.blink = 0;
+            lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
@@ -234,6 +243,46 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
     }
 }
 
+static void lcd_set_prev_show_screen_state(lcd_ctx_t* lcd_ctx)
+{
+    lcd_state_t state = lcd_ctx->lcd_state;
+
+    if (state <= LCD_STATE_SHOW_MIN || state >= LCD_STATE_SHOW_MAX)
+    {
+        return; // nothing to do
+    }
+
+    state--;
+
+    // cycle screens
+    if (state <= LCD_STATE_SHOW_MIN)
+    {
+        state = LCD_STATE_SHOW_MAX - 1;
+    }
+
+    lcd_set_state(lcd_ctx, state);
+}
+
+static void lcd_set_next_show_screen_state(lcd_ctx_t* lcd_ctx)
+{
+    lcd_state_t state = lcd_ctx->lcd_state;
+
+    if (state <= LCD_STATE_SHOW_MIN || state >= LCD_STATE_SHOW_MAX)
+    {
+        return; // nothing to do
+    }
+
+    state++;
+
+    // cycle screens
+    if (state <= LCD_STATE_SHOW_MAX)
+    {
+        state = LCD_STATE_SHOW_MIN + 1;
+    }
+
+    lcd_set_state(lcd_ctx, state);
+}
+
 static void lcd_process_state(lcd_ctx_t* lcd_ctx)
 {
     switch (lcd_ctx->lcd_state)
@@ -247,6 +296,7 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
             }
             else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
             {
+                // TODO: save the result
                 lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_MODE);
                 lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
             }
@@ -261,7 +311,7 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
         {
             if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
             {
-                lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_ADDRESS);
+                lcd_set_prev_show_screen_state(lcd_ctx);
                 lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
             }
             else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
@@ -271,7 +321,7 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
             }
             else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: next screen state
+                lcd_set_next_show_screen_state(lcd_ctx);
                 lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
             }
             break;
@@ -280,18 +330,84 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
         {
             if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: handle increment of the number under cursor
+                // increment the digit at the cursor position
+                // the first digit can be in range     [0;2]
+                // the last two digits can be in range [0;9]
+                lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos]++;
+                if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  0) ||
+                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  4) ||
+                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  8) ||
+                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 12))
+                {
+                    if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '2')
+                    {
+                        lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
+                    }
+                }
+                else
+                {
+                    if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '9')
+                    {
+                        lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
+                    }
+                }
+                lcd_ctx->lcd_upd_flag = 1;
                 lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
+                lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
             }
             else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
             {
+                // TODO: save the result (IP address)
+                uint8_t new_ip[4];
+                uint16_t _new_ip[4];
+                sscanf(lcd_ctx->lcd_line_main, LCD_IP_ADDR_FORMAT_STRING, &_new_ip[0], &_new_ip[1], &_new_ip[2], &_new_ip[3]);
+
+                // note: newlib-nano supports only those conversion specifiers defined in the C89 standard
+                // the "hh" modifier is not available in the C89 standard for "%hhu" ("hh" - convert input to char, store in char object)
+                for (uint8_t i = 0; i < sizeof(new_ip); i++)
+                {
+                    new_ip[i] = (uint8_t)(_new_ip[i] & 0xFF);
+                }
+
                 lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_ADDRESS);
                 lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
             }
             else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: handle cursor position
+                // move cursor position
+                lcd_ctx->lcd_cursor.pos++;
+                if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  3) ||
+                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  7) ||
+                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 11))
+                {
+                    // skip positions with dots: "000.000.000.000"
+                    lcd_ctx->lcd_cursor.pos++;
+                }
+                if (lcd_ctx->lcd_cursor.pos > LCD_IP_ADDR_END_POS)
+                {
+                    // cycle the cursor at IP address line
+                    lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
+                }
                 lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
+                lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+            }
+            else
+            {
+                // blinking character at the current cursor position
+                uint32_t timedelta = GET_CURRENT_TIMESTAMP_MS() - lcd_ctx->lcd_timestamp_ms;
+                if (!lcd_ctx->lcd_cursor.blink && timedelta > LCD_CURSOR_BLINK_PERIOD_MS)
+                {
+                    lcd_put_cursor(lcd_ctx, 0, lcd_ctx->lcd_cursor.pos);
+                    lcd_send_string(lcd_ctx, LCD_CURSOR_BLINK_CHARACTER); // display blink character
+                    lcd_ctx->lcd_cursor.blink = !lcd_ctx->lcd_cursor.blink;
+                    lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+                }
+                else if (lcd_ctx->lcd_cursor.blink && timedelta > LCD_CURSOR_BLINK_DURATION_MS)
+                {
+                    lcd_ctx->lcd_upd_flag = 1; // display the actual symbol back
+                    lcd_ctx->lcd_cursor.blink = !lcd_ctx->lcd_cursor.blink;
+                    lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+                }
             }
             break;
         }
@@ -299,7 +415,7 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
         {
             if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: cycle the screens
+                lcd_set_prev_show_screen_state(lcd_ctx);
                 lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
             }
             else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
@@ -309,7 +425,7 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
             }
             else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
             {
-                lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_MODE);
+                lcd_set_next_show_screen_state(lcd_ctx);
                 lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
             }
             break;
