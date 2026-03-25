@@ -198,20 +198,20 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
 
     switch (lcd_ctx->lcd_state)
     {
-        case LCD_STATE_SHOW_IP_ADDRESS:
+        case LCD_STATE_SHOW_GREATING:
         {
-            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, 192, 168, 0, 1);
-            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [EDIT]  [>]");
+            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, "     Hello!     ");
+            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "Press any button");
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
-        case LCD_STATE_CONFIG_IP_ADDRESS:
+        case LCD_STATE_SHOW_IP_ADDRESS:
+        case LCD_STATE_SHOW_SUBNET_MASK:
+        case LCD_STATE_SHOW_GATEWAY:
         {
+            // TODO: display real values
             snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, 192, 168, 0, 1);
-            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[+]  [SAVE]  [>]");
-            lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
-            lcd_ctx->lcd_cursor.blink = 0;
-            lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [EDIT]  [>]");
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
@@ -222,17 +222,23 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
+        case LCD_STATE_CONFIG_IP_ADDRESS:
+        case LCD_STATE_CONFIG_SUBNET_MASK:
+        case LCD_STATE_CONFIG_GATEWAY:
+        {
+            // TODO: display real values
+            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, 192, 168, 0, 1);
+            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[+]  [SAVE]  [>]");
+            lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
+            lcd_ctx->lcd_cursor.blink = 0;
+            lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+            lcd_ctx->lcd_upd_flag = 1;
+            break;
+        }
         case LCD_STATE_CONFIG_IP_MODE:
         {
             snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, "IP mode:  Static");
             snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [SAVE]  [>]");
-            lcd_ctx->lcd_upd_flag = 1;
-            break;
-        }
-        case LCD_STATE_SHOW_GREATING:
-        {
-            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, "     Hello!     ");
-            snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "Press any button");
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
@@ -283,26 +289,127 @@ static void lcd_set_next_show_screen_state(lcd_ctx_t* lcd_ctx)
     lcd_set_state(lcd_ctx, state);
 }
 
+static void lcd_ip_config_process_inc(lcd_ctx_t* lcd_ctx)
+{
+    // increment the digit at the cursor position
+    // the first digit can be in range     [0;2]
+    // the last two digits can be in range [0;9]
+    lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos]++;
+
+    if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  0) ||
+        (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  4) ||
+        (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  8) ||
+        (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 12))
+    {
+        if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '2')
+        {
+            lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
+        }
+    }
+    else
+    {
+        if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '9')
+        {
+            lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
+        }
+    }
+    lcd_ctx->lcd_upd_flag = 1;
+}
+
+static void lcd_ip_config_process_move(lcd_ctx_t* lcd_ctx)
+{
+    // move cursor position
+    lcd_ctx->lcd_cursor.pos++;
+
+    if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  3) ||
+        (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  7) ||
+        (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 11))
+    {
+        // skip positions with dots: "000.000.000.000"
+        lcd_ctx->lcd_cursor.pos++;
+    }
+    if (lcd_ctx->lcd_cursor.pos > LCD_IP_ADDR_END_POS)
+    {
+        // cycle the cursor at IP address line
+        lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
+    }
+}
+
+static void lcd_ip_config_process_exit(lcd_ctx_t* lcd_ctx, uint8_t* new_ip)
+{
+    uint16_t _new_ip[4];
+    sscanf(lcd_ctx->lcd_line_main, LCD_IP_ADDR_FORMAT_STRING, &_new_ip[0], &_new_ip[1], &_new_ip[2], &_new_ip[3]);
+
+    // note: newlib-nano supports only those conversion specifiers defined in the C89 standard
+    // the "hh" modifier is not available in the C89 standard for "%hhu" ("hh" - convert input to char, store in char object)
+    for (uint8_t i = 0; i < sizeof(new_ip); i++)
+    {
+        new_ip[i] = (uint8_t)(_new_ip[i] & 0xFF);
+    }
+}
+
+static void lcd_ip_config_process_idle(lcd_ctx_t* lcd_ctx)
+{
+    // blinking character at the current cursor position
+    uint32_t timedelta = GET_CURRENT_TIMESTAMP_MS() - lcd_ctx->lcd_timestamp_ms;
+
+    if (!lcd_ctx->lcd_cursor.blink && timedelta > LCD_CURSOR_BLINK_PERIOD_MS)
+    {
+        lcd_put_cursor(lcd_ctx, 0, lcd_ctx->lcd_cursor.pos);
+        lcd_send_string(lcd_ctx, LCD_CURSOR_BLINK_CHARACTER); // display blink character
+        lcd_ctx->lcd_cursor.blink = !lcd_ctx->lcd_cursor.blink;
+        lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+    }
+    else if (lcd_ctx->lcd_cursor.blink && timedelta > LCD_CURSOR_BLINK_DURATION_MS)
+    {
+        lcd_ctx->lcd_upd_flag = 1; // display the actual symbol back
+        lcd_ctx->lcd_cursor.blink = !lcd_ctx->lcd_cursor.blink;
+        lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
+    }
+}
+
 static void lcd_process_state(lcd_ctx_t* lcd_ctx)
 {
     switch (lcd_ctx->lcd_state)
     {
-        case LCD_STATE_CONFIG_IP_MODE:
+        case LCD_STATE_INVALID:
+        {
+            // init lcd content
+            lcd_set_state(lcd_ctx, LCD_STATE_SHOW_GREATING);
+
+            break;
+        }
+        case LCD_STATE_SHOW_GREATING:
+        {
+            if ((lcd_ctx->button_left.state  == BUTTON_STATE_PRESSED) ||
+                (lcd_ctx->button_mid.state   == BUTTON_STATE_PRESSED) ||
+                (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED))
+            {
+                lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_ADDRESS);
+
+                lcd_ctx->button_left.state  = BUTTON_STATE_RELEASED;
+                lcd_ctx->button_mid.state   = BUTTON_STATE_RELEASED;
+                lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
+            }
+            break;
+        }
+        case LCD_STATE_SHOW_IP_ADDRESS:
+        case LCD_STATE_SHOW_SUBNET_MASK:
+        case LCD_STATE_SHOW_GATEWAY:
         {
             if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: handle mode switching
+                lcd_set_prev_show_screen_state(lcd_ctx);
                 lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
             }
             else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: save the result
-                lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_MODE);
+                lcd_set_state(lcd_ctx, lcd_ctx->lcd_state + (LCD_STATE_CONFIG_IP_ADDRESS - LCD_STATE_SHOW_IP_ADDRESS));
                 lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
             }
             else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: handle mode switching
+                lcd_set_next_show_screen_state(lcd_ctx);
                 lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
             }
             break;
@@ -326,129 +433,55 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
             }
             break;
         }
-        case LCD_STATE_CONFIG_IP_ADDRESS:
+        case LCD_STATE_CONFIG_IP_MODE:
         {
             if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
             {
-                // increment the digit at the cursor position
-                // the first digit can be in range     [0;2]
-                // the last two digits can be in range [0;9]
-                lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos]++;
-                if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  0) ||
-                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  4) ||
-                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  8) ||
-                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 12))
-                {
-                    if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '2')
-                    {
-                        lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
-                    }
-                }
-                else
-                {
-                    if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '9')
-                    {
-                        lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
-                    }
-                }
-                lcd_ctx->lcd_upd_flag = 1;
+                // TODO: handle mode switching
+                lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
+            }
+            else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
+            {
+                // TODO: save the result
+                lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_MODE);
+                lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
+            }
+            else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
+            {
+                // TODO: handle mode switching
+                lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
+            }
+            break;
+        }
+        case LCD_STATE_CONFIG_IP_ADDRESS:
+        case LCD_STATE_CONFIG_SUBNET_MASK:
+        case LCD_STATE_CONFIG_GATEWAY:
+        {
+            if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
+            {
+                lcd_ip_config_process_inc(lcd_ctx);
                 lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
                 lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
             }
             else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
             {
-                // TODO: save the result (IP address)
                 uint8_t new_ip[4];
-                uint16_t _new_ip[4];
-                sscanf(lcd_ctx->lcd_line_main, LCD_IP_ADDR_FORMAT_STRING, &_new_ip[0], &_new_ip[1], &_new_ip[2], &_new_ip[3]);
+                lcd_ip_config_process_exit(lcd_ctx, new_ip); // get new value from the main lcd line
+                // TODO: save the result to NVS and apply it
 
-                // note: newlib-nano supports only those conversion specifiers defined in the C89 standard
-                // the "hh" modifier is not available in the C89 standard for "%hhu" ("hh" - convert input to char, store in char object)
-                for (uint8_t i = 0; i < sizeof(new_ip); i++)
-                {
-                    new_ip[i] = (uint8_t)(_new_ip[i] & 0xFF);
-                }
-
-                lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_ADDRESS);
+                lcd_set_state(lcd_ctx, lcd_ctx->lcd_state - (LCD_STATE_CONFIG_IP_ADDRESS - LCD_STATE_SHOW_IP_ADDRESS));
                 lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
             }
             else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
             {
-                // move cursor position
-                lcd_ctx->lcd_cursor.pos++;
-                if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  3) ||
-                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  7) ||
-                    (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 11))
-                {
-                    // skip positions with dots: "000.000.000.000"
-                    lcd_ctx->lcd_cursor.pos++;
-                }
-                if (lcd_ctx->lcd_cursor.pos > LCD_IP_ADDR_END_POS)
-                {
-                    // cycle the cursor at IP address line
-                    lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
-                }
+                lcd_ip_config_process_move(lcd_ctx);
                 lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
                 lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
             }
             else
             {
-                // blinking character at the current cursor position
-                uint32_t timedelta = GET_CURRENT_TIMESTAMP_MS() - lcd_ctx->lcd_timestamp_ms;
-                if (!lcd_ctx->lcd_cursor.blink && timedelta > LCD_CURSOR_BLINK_PERIOD_MS)
-                {
-                    lcd_put_cursor(lcd_ctx, 0, lcd_ctx->lcd_cursor.pos);
-                    lcd_send_string(lcd_ctx, LCD_CURSOR_BLINK_CHARACTER); // display blink character
-                    lcd_ctx->lcd_cursor.blink = !lcd_ctx->lcd_cursor.blink;
-                    lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
-                }
-                else if (lcd_ctx->lcd_cursor.blink && timedelta > LCD_CURSOR_BLINK_DURATION_MS)
-                {
-                    lcd_ctx->lcd_upd_flag = 1; // display the actual symbol back
-                    lcd_ctx->lcd_cursor.blink = !lcd_ctx->lcd_cursor.blink;
-                    lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
-                }
+                lcd_ip_config_process_idle(lcd_ctx);
             }
-            break;
-        }
-        case LCD_STATE_SHOW_IP_ADDRESS:
-        {
-            if (lcd_ctx->button_left.state == BUTTON_STATE_PRESSED)
-            {
-                lcd_set_prev_show_screen_state(lcd_ctx);
-                lcd_ctx->button_left.state = BUTTON_STATE_RELEASED;
-            }
-            else if (lcd_ctx->button_mid.state == BUTTON_STATE_PRESSED)
-            {
-                lcd_set_state(lcd_ctx, LCD_STATE_CONFIG_IP_ADDRESS);
-                lcd_ctx->button_mid.state = BUTTON_STATE_RELEASED;
-            }
-            else if (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED)
-            {
-                lcd_set_next_show_screen_state(lcd_ctx);
-                lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
-            }
-            break;
-        }
-        case LCD_STATE_SHOW_GREATING:
-        {
-            if ((lcd_ctx->button_left.state  == BUTTON_STATE_PRESSED) ||
-                (lcd_ctx->button_mid.state   == BUTTON_STATE_PRESSED) ||
-                (lcd_ctx->button_right.state == BUTTON_STATE_PRESSED))
-            {
-                lcd_set_state(lcd_ctx, LCD_STATE_SHOW_IP_ADDRESS);
-
-                lcd_ctx->button_left.state  = BUTTON_STATE_RELEASED;
-                lcd_ctx->button_mid.state   = BUTTON_STATE_RELEASED;
-                lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
-            }
-            break;
-        }
-        case LCD_STATE_INVALID:
-        {
-            // init lcd content
-            lcd_set_state(lcd_ctx, LCD_STATE_SHOW_GREATING);
-
             break;
         }
         default:

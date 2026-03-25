@@ -46,23 +46,28 @@ typedef struct
 
 typedef struct
 {
-    uint8_t pos      : 6; // current position of cursor (used for CONFIG_* states)
-    uint8_t blink    : 1; // 1 => blink character is displayed now
-    uint8_t reserved : 1; // reserved for future use
+    uint8_t pos      : 6;                                               // current position of cursor (used for CONFIG_* states)
+    uint8_t blink    : 1;                                               // 1 => blink character is displayed now
+    uint8_t reserved : 1;                                               // reserved for future use
 } lcd_cursor_t;
 
 typedef enum
 {
     LCD_STATE_INVALID = 0,
 
+    LCD_STATE_SHOW_GREATING,                                            // move greating out of the screen cycle
+
     LCD_STATE_SHOW_MIN,
     LCD_STATE_SHOW_IP_ADDRESS,
+    LCD_STATE_SHOW_SUBNET_MASK,
+    LCD_STATE_SHOW_GATEWAY,
     LCD_STATE_SHOW_IP_MODE,
-    LCD_STATE_SHOW_GREATING,
     LCD_STATE_SHOW_MAX,
 
     LCD_STATE_CONFIG_MIN,
     LCD_STATE_CONFIG_IP_ADDRESS,
+    LCD_STATE_CONFIG_SUBNET_MASK,
+    LCD_STATE_CONFIG_GATEWAY,
     LCD_STATE_CONFIG_IP_MODE,
     LCD_STATE_CONFIG_MAX,
 
@@ -71,10 +76,10 @@ typedef enum
 
 typedef struct
 {
-    lcd_state_t lcd_state; // fsm
-    uint32_t lcd_timestamp_ms; // used in some states for time tracking
+    lcd_state_t lcd_state;                                              // finite state machine
+    uint32_t lcd_timestamp_ms;                                          // used in some states for time tracking
     lcd_cursor_t lcd_cursor;
-    uint8_t lcd_upd_flag; // > 0 if should be updated, 0 if not
+    uint8_t lcd_upd_flag;                                               // > 0 if should be updated, 0 if not
     char* lcd_line_main;
     char* lcd_line_secondary;
     void (*lcd_cmd)(char cmd);
