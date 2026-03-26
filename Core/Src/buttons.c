@@ -5,6 +5,7 @@
 #include "main.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "nvs_settings.h"
 #include "buttons.h"
 
 static osThreadId_t buttonTaskHandle;
@@ -209,14 +210,27 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
         case LCD_STATE_SHOW_SUBNET_MASK:
         case LCD_STATE_SHOW_GATEWAY:
         {
-            // TODO: display real values
-            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, 192, 168, 0, 1);
+            nvs_settings_ip_addr_t addr;
+            if (lcd_ctx->lcd_state == LCD_STATE_SHOW_IP_ADDRESS)
+            {
+                NVS_SETTING_GET(ip_addr, &addr.value);
+            }
+            else if (lcd_ctx->lcd_state == LCD_STATE_SHOW_SUBNET_MASK)
+            {
+                NVS_SETTING_GET(subnet_mask, &addr.value);
+            }
+            else if (lcd_ctx->lcd_state == LCD_STATE_SHOW_GATEWAY)
+            {
+                NVS_SETTING_GET(gateway, &addr.value);
+            }
+            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, addr.byte[0], addr.byte[1], addr.byte[2], addr.byte[3]);
             snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [EDIT]  [>]");
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
         case LCD_STATE_SHOW_IP_MODE:
         {
+            // TODO: show real value
             snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, "IP mode:  Static");
             snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [EDIT]  [>]");
             lcd_ctx->lcd_upd_flag = 1;
@@ -226,8 +240,20 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
         case LCD_STATE_CONFIG_SUBNET_MASK:
         case LCD_STATE_CONFIG_GATEWAY:
         {
-            // TODO: display real values
-            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, 192, 168, 0, 1);
+            nvs_settings_ip_addr_t addr;
+            if (lcd_ctx->lcd_state == LCD_STATE_CONFIG_IP_ADDRESS)
+            {
+                NVS_SETTING_GET(ip_addr, &addr.value);
+            }
+            else if (lcd_ctx->lcd_state == LCD_STATE_CONFIG_SUBNET_MASK)
+            {
+                NVS_SETTING_GET(subnet_mask, &addr.value);
+            }
+            else if (lcd_ctx->lcd_state == LCD_STATE_CONFIG_GATEWAY)
+            {
+                NVS_SETTING_GET(gateway, &addr.value);
+            }
+            snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, addr.byte[0], addr.byte[1], addr.byte[2], addr.byte[3]);
             snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[+]  [SAVE]  [>]");
             lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
             lcd_ctx->lcd_cursor.blink = 0;
@@ -237,6 +263,7 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
         }
         case LCD_STATE_CONFIG_IP_MODE:
         {
+            // TODO: show real value
             snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, "IP mode:  Static");
             snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [SAVE]  [>]");
             lcd_ctx->lcd_upd_flag = 1;
@@ -357,7 +384,7 @@ static void lcd_ip_config_process_move(lcd_ctx_t* lcd_ctx)
 
 static void lcd_ip_config_process_save(lcd_ctx_t* lcd_ctx)
 {
-    uint8_t new_ip[4];
+    nvs_settings_ip_addr_t new_ip;
     uint16_t _new_ip[4];
     sscanf(lcd_ctx->lcd_line_main, LCD_IP_ADDR_FORMAT_STRING, &_new_ip[0], &_new_ip[1], &_new_ip[2], &_new_ip[3]);
 
@@ -365,7 +392,7 @@ static void lcd_ip_config_process_save(lcd_ctx_t* lcd_ctx)
     // the "hh" modifier is not available in the C89 standard for "%hhu" ("hh" - convert input to char, store in char object)
     for (uint8_t i = 0; i < sizeof(new_ip); i++)
     {
-        new_ip[i] = (uint8_t)(_new_ip[i] & 0xFF);
+        new_ip.byte[i] = (uint8_t)(_new_ip[i] & 0xFF);
     }
 
     // TODO: save the result to NVS and apply it
@@ -373,14 +400,17 @@ static void lcd_ip_config_process_save(lcd_ctx_t* lcd_ctx)
     {
         case LCD_STATE_CONFIG_IP_ADDRESS:
         {
+            NVS_SETTING_SET(ip_addr, &new_ip.value, nvs_settings_apply_ip_addr);
             break;
         }
         case LCD_STATE_CONFIG_SUBNET_MASK:
         {
+            NVS_SETTING_SET(subnet_mask, &new_ip.value, nvs_settings_apply_subnet_mask);
             break;
         }
         case LCD_STATE_CONFIG_GATEWAY:
         {
+            NVS_SETTING_SET(gateway, &new_ip.value, nvs_settings_apply_gateway);
             break;
         }
     }

@@ -1,4 +1,7 @@
-#include "stm32f4xx_hal.h"
+#include <stdio.h>
+#include <string.h>
+
+#include "main.h"
 #include "nvs_settings.h"
 
 static uint32_t nvs_settings_current_header_addr = 0xFFFFFFFF;
@@ -109,7 +112,10 @@ static uint32_t nvs_settings_init_defaults(void)
 
     __attribute__((aligned(4))) nvs_settings_entry_t entry = {0xFF};
 
-    entry.settings.ip_mode = 0xFF;
+    entry.settings.ip_addr     = NVS_SETTINGS_IP_ADDR_ENCODE(192, 168, 137,  25);
+    entry.settings.subnet_mask = NVS_SETTINGS_IP_ADDR_ENCODE(255, 255, 255,   0);
+    entry.settings.gateway     = NVS_SETTINGS_IP_ADDR_ENCODE(  0,   0,   0,   0);
+    entry.settings.ip_mode     = NVS_SETTINGS_IP_MODE_ENCODE(IP_MODE_AUTO);
 
     nvs_settings_write_cfg(&entry);
     return CONFIG_NVS_SETTINGS_ADDR;
@@ -281,12 +287,50 @@ void nvs_settings_setting_set(uint8_t* value, uint16_t size, uint16_t offset, vo
  * Apply functions for general settings
  * never call them directly, use only with MACROSes
  */
+void nvs_settings_apply_ip_addr(uint8_t* ip_addr)
+{
+    if (!ip_addr)
+    {
+        return;
+    }
+
+    // TODO: apply new value
+
+    DBG_PRINTF("Set ip address: 0x%08X", *((uint32_t*)ip_addr));
+}
+
+void nvs_settings_apply_subnet_mask(uint8_t* subnet_mask)
+{
+    if (!subnet_mask)
+    {
+        return;
+    }
+
+    // TODO: apply new value
+
+    DBG_PRINTF("Set subnet mask: 0x%08X", *((uint32_t*)subnet_mask));
+}
+
+void nvs_settings_apply_gateway(uint8_t* gateway)
+{
+    if (!gateway)
+    {
+        return;
+    }
+
+    // TODO: apply new value
+
+    DBG_PRINTF("Set gateway: 0x%08X", *((uint32_t*)gateway));
+}
+
 void nvs_settings_apply_ip_mode(uint8_t* ip_mode)
 {
     if (!ip_mode)
     {
         return;
     }
+
+    // TODO: apply new value
 
     DBG_PRINTF("Set ip mode: %d", *ip_mode);
 }

@@ -29,7 +29,7 @@
 #include <string.h>
 
 /* USER CODE BEGIN 0 */
-
+#include "nvs_settings.h"
 /* USER CODE END 0 */
 /* Private function prototypes -----------------------------------------------*/
 static void ethernet_link_status_updated(struct netif *netif);
@@ -77,6 +77,27 @@ void MX_LWIP_Init(void)
   GATEWAY_ADDRESS[3] = 0;
 
 /* USER CODE BEGIN IP_ADDRESSES */
+
+  // apply settings from NVS
+  // TODO: add AUTO mode (DHCP) support
+
+  nvs_settings_ip_addr_t addr;
+  NVS_SETTING_GET(ip_addr, &addr.value);
+  for (uint8_t i = 0; i < sizeof(IP_ADDRESS) / sizeof(IP_ADDRESS[0]); i++)
+  {
+    IP_ADDRESS[i] = addr.byte[i];
+  }
+  NVS_SETTING_GET(subnet_mask, &addr.value);
+  for (uint8_t i = 0; i < sizeof(NETMASK_ADDRESS) / sizeof(NETMASK_ADDRESS[0]); i++)
+  {
+    NETMASK_ADDRESS[i] = addr.byte[i];
+  }
+  NVS_SETTING_GET(gateway, &addr.value);
+  for (uint8_t i = 0; i < sizeof(GATEWAY_ADDRESS) / sizeof(GATEWAY_ADDRESS[0]); i++)
+  {
+    GATEWAY_ADDRESS[i] = addr.byte[i];
+  }
+
 /* USER CODE END IP_ADDRESSES */
 
   /* Initilialize the LwIP stack with RTOS */
