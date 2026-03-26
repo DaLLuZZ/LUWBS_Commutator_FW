@@ -281,7 +281,7 @@ static void lcd_set_next_show_screen_state(lcd_ctx_t* lcd_ctx)
     state++;
 
     // cycle screens
-    if (state <= LCD_STATE_SHOW_MAX)
+    if (state >= LCD_STATE_SHOW_MAX)
     {
         state = LCD_STATE_SHOW_MIN + 1;
     }
@@ -294,6 +294,8 @@ static void lcd_ip_config_process_inc(lcd_ctx_t* lcd_ctx)
     // increment the digit at the cursor position
     // the first digit can be in range     [0;2]
     // the last two digits can be in range [0;9]
+    // if the first digit is 2, the second can be in range [0;5]
+    // if the first is 2, the second is 5, the third can be in range [0;5]
     lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos]++;
 
     if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  0) ||
@@ -301,14 +303,32 @@ static void lcd_ip_config_process_inc(lcd_ctx_t* lcd_ctx)
         (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  8) ||
         (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 12))
     {
+        // first digits
         if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '2')
+        {
+            lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
+        }
+    }
+    else if ((lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  1) ||
+             (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  5) ||
+             (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS +  9) ||
+             (lcd_ctx->lcd_cursor.pos == LCD_IP_ADDR_START_POS + 13))
+    {
+        // second digits
+        if ((lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos - 1] == '2') &&
+            (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '5') ||
+            (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '9'))
         {
             lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
         }
     }
     else
     {
-        if (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '9')
+        // third digits
+        if ((lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos - 2] == '2') &&
+            (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos - 1] == '5') &&
+            (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '5') ||
+            (lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] > '9'))
         {
             lcd_ctx->lcd_line_main[lcd_ctx->lcd_cursor.pos] = '0'; // cycle
         }
