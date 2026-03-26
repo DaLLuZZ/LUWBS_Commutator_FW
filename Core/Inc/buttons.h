@@ -9,7 +9,7 @@ extern "C" {
 
 #define GET_CURRENT_TIMESTAMP_MS()      ((1000 * osKernelGetTickCount()) / osKernelGetTickFreq())
 
-#define BUTTON_DEBOUNCE_TIME_MS         (80)
+#define BUTTON_DEBOUNCE_TIME_MS         (30)
 
 #define BUTTON_READ_PRESSED             GPIO_PIN_RESET
 #define BUTTON_READ_RELEASED            GPIO_PIN_SET
