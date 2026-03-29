@@ -9,7 +9,7 @@
 #include "lcd_buttons.h"
 
 static osThreadId_t buttonTaskHandle;
-static uint32_t buttonTaskBuffer[2048];
+static uint32_t buttonTaskBuffer[1024];
 static StaticTask_t buttonTaskControlBlock;
 static const osThreadAttr_t buttonTask_attributes = {
     .name = "buttonTask",

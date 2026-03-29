@@ -494,6 +494,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Src\nvs_settings.c</FilePath>
             </File>
+            <File>
+              <FileName>rpc_server.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\rpc_server.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

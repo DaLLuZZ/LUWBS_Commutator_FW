@@ -34,6 +34,7 @@
 /* Within 'USER CODE' section, code will be kept by default at each generation */
 /* USER CODE BEGIN 0 */
 #include "scpi_server.h"
+#include "rpc_server.h"
 /* USER CODE END 0 */
 
 /* Private define ------------------------------------------------------------*/
@@ -758,6 +759,7 @@ void ethernet_link_thread(void* argument)
   /* Initialize SCPI server. */
   DBG_PRINTF("Ready to init scpi server");
   scpi_server_init();
+  rpc_server_init();
 /* USER CODE END ETH link init */
 
   for(;;)
