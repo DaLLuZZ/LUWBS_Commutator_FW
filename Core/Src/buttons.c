@@ -225,6 +225,8 @@ static void lcd_set_state(lcd_ctx_t* lcd_ctx, lcd_state_t new_state)
             }
             snprintf(lcd_ctx->lcd_line_main,      LCD_LINE_LEN, LCD_IP_ADDR_FORMAT_STRING, addr.byte[0], addr.byte[1], addr.byte[2], addr.byte[3]);
             snprintf(lcd_ctx->lcd_line_secondary, LCD_LINE_LEN, "[<]  [EDIT]  [>]");
+            lcd_ctx->lcd_cursor.blink = 0;
+            lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
             lcd_ctx->lcd_upd_flag = 1;
             break;
         }
@@ -380,6 +382,14 @@ static void lcd_ip_config_process_move(lcd_ctx_t* lcd_ctx)
         // cycle the cursor at IP address line
         lcd_ctx->lcd_cursor.pos = LCD_IP_ADDR_START_POS;
     }
+
+    // show blink character at the new position
+    lcd_put_cursor(lcd_ctx, 0, 0);
+    lcd_send_string(lcd_ctx, lcd_ctx->lcd_line_main);     // clear blink character at the previous cursor pos
+    lcd_put_cursor(lcd_ctx, 0, lcd_ctx->lcd_cursor.pos);
+    lcd_send_string(lcd_ctx, LCD_CURSOR_BLINK_CHARACTER); // display blink character
+    lcd_ctx->lcd_cursor.blink = 1;
+    lcd_ctx->lcd_timestamp_ms = GET_CURRENT_TIMESTAMP_MS();
 }
 
 static void lcd_ip_config_process_save(lcd_ctx_t* lcd_ctx)
@@ -479,6 +489,33 @@ static void lcd_process_state(lcd_ctx_t* lcd_ctx)
             {
                 lcd_set_next_show_screen_state(lcd_ctx);
                 lcd_ctx->button_right.state = BUTTON_STATE_RELEASED;
+            }
+            else
+            {
+                uint32_t timedelta = GET_CURRENT_TIMESTAMP_MS() - lcd_ctx->lcd_timestamp_ms;
+                // show description for first N milliseconds
+                if (!lcd_ctx->lcd_cursor.blink && timedelta < LCD_SHOW_DESCRIPTION_DELAY_MS)
+                {
+                    lcd_put_cursor(lcd_ctx, 0, 0);
+                    if (lcd_ctx->lcd_state == LCD_STATE_SHOW_IP_ADDRESS)
+                    {
+                        lcd_send_string(lcd_ctx, "   IP ADDRESS   ");
+                    }
+                    else if (lcd_ctx->lcd_state == LCD_STATE_SHOW_SUBNET_MASK)
+                    {
+                        lcd_send_string(lcd_ctx, "  SUBNET  MASK  ");
+                    }
+                    else if (lcd_ctx->lcd_state == LCD_STATE_SHOW_GATEWAY)
+                    {
+                        lcd_send_string(lcd_ctx, "DEFAULT  GATEWAY");
+                    }
+                    lcd_ctx->lcd_cursor.blink = 1;
+                }
+                else if (lcd_ctx->lcd_cursor.blink && timedelta > LCD_SHOW_DESCRIPTION_DELAY_MS)
+                {
+                    // return to normal state
+                    lcd_ctx->lcd_upd_flag = 1;
+                }
             }
             break;
         }

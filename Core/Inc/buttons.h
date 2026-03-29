@@ -26,6 +26,8 @@ extern "C" {
 #define LCD_CURSOR_BLINK_DURATION_MS    (250)
 #define LCD_CURSOR_BLINK_CHARACTER      ("_")                           // the symbol displayed at the current cursor position for LCD_CURSOR_BLINK_DURATION_MS milliseconds
 
+#define LCD_SHOW_DESCRIPTION_DELAY_MS   (500)
+
 typedef enum
 {
     BUTTON_STATE_RELEASED = 0,
