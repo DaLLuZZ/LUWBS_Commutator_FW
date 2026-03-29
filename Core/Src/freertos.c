@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "buttons.h"
+#include "lcd_buttons.h"
 #include "wwdg.h"
 /* USER CODE END Includes */
 
