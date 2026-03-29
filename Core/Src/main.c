@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "i2c.h"
 #include "lwip.h"
 #include "usart.h"
 #include "gpio.h"
@@ -69,9 +70,9 @@ PUTCHAR_PROTOTYPE
 	if (ch == '\n')
 	{
 		uint8_t r = '\r';
-		HAL_UART_Transmit(&huart2, (uint8_t*)&r, 1, 0xFFFF);
+		HAL_UART_Transmit(&huart6, (uint8_t*)&r, 1, 0xFFFF);
 	}
-  HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, 0xFFFF);
+  HAL_UART_Transmit(&huart6, (uint8_t*)&ch, 1, 0xFFFF);
 }
 /* USER CODE END 0 */
 
@@ -103,7 +104,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
+  MX_I2C1_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
   DBG_PRINTF("USART initialized");
   /* USER CODE END 2 */

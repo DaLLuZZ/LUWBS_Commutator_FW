@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "lcd_buttons.h"
 #include "wwdg.h"
 /* USER CODE END Includes */
 
@@ -159,6 +160,7 @@ void StartDefaultTask(void *argument)
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
   DBG_PRINTF("Default task started");
+  ButtonTASK_Init();
   /* Infinite loop */
   for(;;)
   {

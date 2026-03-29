@@ -48,13 +48,13 @@ extern const uint32_t GATEWAY[4];
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define DBG_PRINTF(x...)                                                       \
-do                                                                             \
-{                                                                              \
-  printf("DBG | %s (file: %s, line: %d): ", __FUNCTION__, __FILE__, __LINE__); \
-  printf(x);                                                                   \
-  printf("\n");                                                              \
-} while(0)                                                                     \
+#define DBG_PRINTF(x...)                                                            \
+do                                                                                  \
+{                                                                                   \
+    printf("DBG | %s (file: %s, line: %d): ", __FUNCTION__, __FILE__, __LINE__);    \
+    printf(x);                                                                      \
+    printf("\n");                                                                   \
+} while(0)
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -65,12 +65,21 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define INPUT_MID_Pin GPIO_PIN_3
+#define INPUT_MID_GPIO_Port GPIOF
+#define INPUT_MID_EXTI_IRQn EXTI3_IRQn
 #define R_D_AN_Pin GPIO_PIN_7
 #define R_D_AN_GPIO_Port GPIOF
 #define R_D_AP_Pin GPIO_PIN_8
 #define R_D_AP_GPIO_Port GPIOF
 #define R_D_VN_Pin GPIO_PIN_9
 #define R_D_VN_GPIO_Port GPIOF
+#define INPUT_RIGHT_Pin GPIO_PIN_10
+#define INPUT_RIGHT_GPIO_Port GPIOF
+#define INPUT_RIGHT_EXTI_IRQn EXTI15_10_IRQn
+#define INPUT_LEFT_Pin GPIO_PIN_0
+#define INPUT_LEFT_GPIO_Port GPIOC
+#define INPUT_LEFT_EXTI_IRQn EXTI0_IRQn
 #define R_C_AN_Pin GPIO_PIN_2
 #define R_C_AN_GPIO_Port GPIOC
 #define LED_GREEN_Pin GPIO_PIN_0
