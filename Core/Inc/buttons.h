@@ -14,7 +14,8 @@ extern "C" {
 #define BUTTON_READ_PRESSED             GPIO_PIN_RESET
 #define BUTTON_READ_RELEASED            GPIO_PIN_SET
 
-#define LCD_SLAVE_ADDRESS               (0x4E)
+#define LCD_SLAVE_WRITE_ADDRESS         (0x4E)
+#define LCD_SLAVE_READ_ADDRESS          (0x4F)
 #define LCD_SYMBOLS_PER_LINE            (16)
 #define LCD_LINE_LEN                    (LCD_SYMBOLS_PER_LINE + 1)      // + null-terminator
 
@@ -26,7 +27,14 @@ extern "C" {
 #define LCD_CURSOR_BLINK_DURATION_MS    (250)
 #define LCD_CURSOR_BLINK_CHARACTER      ("_")                           // the symbol displayed at the current cursor position for LCD_CURSOR_BLINK_DURATION_MS milliseconds
 
-#define LCD_SHOW_DESCRIPTION_DELAY_MS   (500)
+#define LCD_SHOW_DESCRIPTION_DELAY_MS   (1000)
+
+#define LCD_HEALTH_CHECK_PERIOD_MS      (2500)
+#define LCD_HEALTH_CHECK_CANARY_STRING  "<CANARY>0_0</CANARY>"          // 21 bytes with null-terminator
+#define LCD_HEALTH_CHECK_MAX_BUF_BYTES  (32)
+
+#define LCD_LINE_MAIN_ROW_INDEX         (0)
+#define LCD_LINE_SECONDARY_ROW_INDEX    (1)
 
 typedef enum
 {
@@ -80,12 +88,15 @@ typedef struct
 {
     lcd_state_t lcd_state;                                              // finite state machine
     uint32_t lcd_timestamp_ms;                                          // used in some states for time tracking
+    uint32_t lcd_health_timestamp_ms;                                   // used for canary-word-based health-check algorithm
+    char* lcd_health_canary;                                            // used for canary-word-based health-check algorithm
     lcd_cursor_t lcd_cursor;
     uint8_t lcd_upd_flag;                                               // > 0 if should be updated, 0 if not
     char* lcd_line_main;
     char* lcd_line_secondary;
     void (*lcd_cmd)(char cmd);
-    void (*lcd_data)(char data);
+    void (*lcd_write)(char data);
+    char (*lcd_read)(void);
     button_ctx_t button_left;
     button_ctx_t button_mid;
     button_ctx_t button_right;
