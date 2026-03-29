@@ -317,6 +317,10 @@ static scpi_result_t SCPI_ParseChanlst(scpi_t* context, scpi_channel_value_t* ar
                 res = SCPI_ExprChannelListEntry(context, &channel_list_param, chanlst_idx, &is_range, values_from, values_to, 4, &dimensions);
                 if (is_range == FALSE)
                 { /* still can have multiple dimensions */
+                    if (arr_idx >= MAXROW * MAXCOL)
+                    {
+                        return SCPI_RES_ERR;
+                    }
                     if (dimensions == 1)
                     {
                         /* here we have our values
@@ -340,10 +344,6 @@ static scpi_result_t SCPI_ParseChanlst(scpi_t* context, scpi_channel_value_t* ar
                         return SCPI_RES_ERR;
                     }
                     arr_idx++; /* inkrement array where we want to save our values to, not neccessary otherwise */
-                    if (arr_idx >= MAXROW * MAXCOL)
-                    {
-                        return SCPI_RES_ERR;
-                    }
                 }
                 else if (is_range == TRUE)
                 {
@@ -381,18 +381,18 @@ static scpi_result_t SCPI_ParseChanlst(scpi_t* context, scpi_channel_value_t* ar
                                  * row == n
                                  * col == m
                                  * call a function or something */
-                                array[arr_idx].row = n;
-                                array[arr_idx].col = m;
-                                arr_idx++;
                                 if (arr_idx >= MAXROW * MAXCOL)
                                 {
                                     return SCPI_RES_ERR;
                                 }
+                                array[arr_idx].row = n;
+                                array[arr_idx].col = m;
                                 if (m == (size_t)values_to[1])
                                 {
                                     /* endpoint reached, stop column for-loop */
                                     for_stop_col = TRUE;
                                 }
+                                arr_idx++;
                             }
                             /* special case for range, example: (@2!1) */
                         }
@@ -402,13 +402,13 @@ static scpi_result_t SCPI_ParseChanlst(scpi_t* context, scpi_channel_value_t* ar
                              * row == n
                              * col == 0 (fixed number)
                              * call function or sth. */
-                            array[arr_idx].row = n;
-                            array[arr_idx].col = 0;
-                            arr_idx++;
                             if (arr_idx >= MAXROW * MAXCOL)
                             {
                                 return SCPI_RES_ERR;
                             }
+                            array[arr_idx].row = n;
+                            array[arr_idx].col = 0;
+                            arr_idx++;
                         }
                         if (n == (size_t)values_to[0])
                         {
