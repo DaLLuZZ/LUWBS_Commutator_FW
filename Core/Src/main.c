@@ -65,6 +65,8 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#if defined(ENABLE_DEBUG) && ENABLE_DEBUG == DEBUG_USART
+
 PUTCHAR_PROTOTYPE
 {
 	if (ch == '\n')
@@ -74,6 +76,20 @@ PUTCHAR_PROTOTYPE
 	}
   HAL_UART_Transmit(&huart6, (uint8_t*)&ch, 1, 0xFFFF);
 }
+
+#elif defined(ENABLE_DEBUG) && ENABLE_DEBUG == DEBUG_SERVER
+
+// TODO
+
+#else  // ENABLE_DEBUG
+
+// stub
+PUTCHAR_PROTOTYPE
+{
+
+}
+
+#endif // ENABLE_DEBUG
 /* USER CODE END 0 */
 
 /**

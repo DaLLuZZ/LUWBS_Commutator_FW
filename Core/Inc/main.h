@@ -48,6 +48,14 @@ extern const uint32_t GATEWAY[4];
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+#define DEBUG_NONE   0
+#define DEBUG_USART  1
+#define DEBUG_SERVER 2
+
+#define ENABLE_DEBUG DEBUG_NONE
+
+#if defined(ENABLE_DEBUG) && ENABLE_DEBUG
+
 #define DBG_PRINTF(x...)                                                            \
 do                                                                                  \
 {                                                                                   \
@@ -55,6 +63,12 @@ do                                                                              
     printf(x);                                                                      \
     printf("\n");                                                                   \
 } while(0)
+
+#else  // ENABLE_DEBUG
+
+#define DBG_PRINTF(x...)
+
+#endif // ENABLE_DEBUG
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

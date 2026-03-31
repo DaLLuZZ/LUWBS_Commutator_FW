@@ -133,7 +133,7 @@
 /*----- Value in opt.h for LWIP_MULTICAST_PING: 0 -----*/
 #define LWIP_MULTICAST_PING 1
 /*----- Value in opt.h for LWIP_DBG_TYPES_ON: LWIP_DBG_ON -----*/
-#define LWIP_DBG_TYPES_ON (LWIP_DBG_ON | LWIP_DBG_TRACE)
+#define LWIP_DBG_TYPES_ON 0 // (LWIP_DBG_ON | LWIP_DBG_TRACE)
 /*----- Value in opt.h for ETHARP_DEBUG: LWIP_DBG_OFF -----*/
 #define ETHARP_DEBUG LWIP_DBG_OFF
 /*----- Value in opt.h for NETIF_DEBUG: LWIP_DBG_OFF -----*/

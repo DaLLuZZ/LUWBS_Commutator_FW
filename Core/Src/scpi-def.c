@@ -42,82 +42,6 @@
 #include "scpi/scpi.h"
 #include "scpi-def.h"
 
-static scpi_result_t DMM_MeasureVoltageDcQ(scpi_t * context) {
-    scpi_number_t param1, param2;
-    char bf[15];
-    fprintf(stderr, "meas:volt:dc\r\n"); /* debug command name */
-
-    /* read first parameter if present */
-    if (!SCPI_ParamNumber(context, scpi_special_numbers_def, &param1, FALSE)) {
-        /* do something, if parameter not present */
-    }
-
-    /* read second paraeter if present */
-    if (!SCPI_ParamNumber(context, scpi_special_numbers_def, &param2, FALSE)) {
-        /* do something, if parameter not present */
-    }
-
-
-    SCPI_NumberToStr(context, scpi_special_numbers_def, &param1, bf, 15);
-    fprintf(stderr, "\tP1=%s\r\n", bf);
-
-
-    SCPI_NumberToStr(context, scpi_special_numbers_def, &param2, bf, 15);
-    fprintf(stderr, "\tP2=%s\r\n", bf);
-
-    SCPI_ResultDouble(context, 0);
-
-    return SCPI_RES_OK;
-}
-
-static scpi_result_t DMM_MeasureVoltageAcQ(scpi_t * context) {
-    scpi_number_t param1, param2;
-    char bf[15];
-    fprintf(stderr, "meas:volt:ac\r\n"); /* debug command name */
-
-    /* read first parameter if present */
-    if (!SCPI_ParamNumber(context, scpi_special_numbers_def, &param1, FALSE)) {
-        /* do something, if parameter not present */
-    }
-
-    /* read second paraeter if present */
-    if (!SCPI_ParamNumber(context, scpi_special_numbers_def, &param2, FALSE)) {
-        /* do something, if parameter not present */
-    }
-
-
-    SCPI_NumberToStr(context, scpi_special_numbers_def, &param1, bf, 15);
-    fprintf(stderr, "\tP1=%s\r\n", bf);
-
-
-    SCPI_NumberToStr(context, scpi_special_numbers_def, &param2, bf, 15);
-    fprintf(stderr, "\tP2=%s\r\n", bf);
-
-    SCPI_ResultDouble(context, 0);
-
-    return SCPI_RES_OK;
-}
-
-static scpi_result_t DMM_ConfigureVoltageDc(scpi_t * context) {
-    double param1, param2;
-    fprintf(stderr, "conf:volt:dc\r\n"); /* debug command name */
-
-    /* read first parameter if present */
-    if (!SCPI_ParamDouble(context, &param1, TRUE)) {
-        return SCPI_RES_ERR;
-    }
-
-    /* read second paraeter if present */
-    if (!SCPI_ParamDouble(context, &param2, FALSE)) {
-        /* do something, if parameter not present */
-    }
-
-    fprintf(stderr, "\tP1=%lf\r\n", param1);
-    fprintf(stderr, "\tP2=%lf\r\n", param2);
-
-    return SCPI_RES_OK;
-}
-
 static scpi_result_t TEST_Bool(scpi_t * context) {
     scpi_bool_t param1;
     fprintf(stderr, "TEST:BOOL\r\n"); /* debug command name */
@@ -274,9 +198,6 @@ static scpi_result_t SCPI_ApplyAllRoutes()
     HAL_GPIO_WritePin(R_D_VN_GPIO_Port, R_D_VN_Pin, scpi_route_status[ROW_INPUT_VOL_NEGATIVE][COL_OUTPUT_CHANNEL_D] == SCPI_ROUTE_CLOSED ? GPIO_CLOSED_STATE : GPIO_OPENED_STATE);
     HAL_GPIO_WritePin(R_D_AP_GPIO_Port, R_D_AP_Pin, scpi_route_status[ROW_INPUT_AMP_POSITIVE][COL_OUTPUT_CHANNEL_D] == SCPI_ROUTE_CLOSED ? GPIO_CLOSED_STATE : GPIO_OPENED_STATE);
     HAL_GPIO_WritePin(R_D_AN_GPIO_Port, R_D_AN_Pin, scpi_route_status[ROW_INPUT_AMP_NEGATIVE][COL_OUTPUT_CHANNEL_D] == SCPI_ROUTE_CLOSED ? GPIO_CLOSED_STATE : GPIO_OPENED_STATE);
-
-    //DBG_PRINTF("Applied routes:\n
-      //              ROW_INPUT_VOL_POSITIVE -> ");
 
     return SCPI_RES_OK;
 }
@@ -557,7 +478,7 @@ static scpi_result_t SCPI_RouteClose(scpi_t* context)
     // checks were passed => apply new configuration
     memcpy(scpi_route_status, loc_scpi_route_status, sizeof(scpi_route_status));
     SCPI_ApplyAllRoutes(); // apply new changes
-    osDelay(5); // sleep 5 ms (2 ms max release time according to EDR201A0500 datasheet)
+    osDelay(2); // sleep 2 ms (2 ms max release time according to EDR201A0500 datasheet)
 
     return res;
 }
@@ -743,14 +664,7 @@ const scpi_command_t scpi_commands[] = {
     {.pattern = "SYSTem:ERRor:COUNt?", .callback = SCPI_SystemErrorCountQ,},
     {.pattern = "SYSTem:VERSion?", .callback = SCPI_SystemVersionQ,},
 
-    /* {.pattern = "STATus:OPERation?", .callback = scpi_stub_callback,}, */
-    /* {.pattern = "STATus:OPERation:EVENt?", .callback = scpi_stub_callback,}, */
-    /* {.pattern = "STATus:OPERation:CONDition?", .callback = scpi_stub_callback,}, */
-    /* {.pattern = "STATus:OPERation:ENABle", .callback = scpi_stub_callback,}, */
-    /* {.pattern = "STATus:OPERation:ENABle?", .callback = scpi_stub_callback,}, */
-
     {.pattern = "STATus:QUEStionable[:EVENt]?", .callback = SCPI_StatusQuestionableEventQ,},
-    /* {.pattern = "STATus:QUEStionable:CONDition?", .callback = scpi_stub_callback,}, */
     {.pattern = "STATus:QUEStionable:ENABle", .callback = SCPI_StatusQuestionableEnable,},
     {.pattern = "STATus:QUEStionable:ENABle?", .callback = SCPI_StatusQuestionableEnableQ,},
 
@@ -762,20 +676,6 @@ const scpi_command_t scpi_commands[] = {
     {.pattern = "ROUTe:CLOSe[:STATe]?", .callback = SCPI_RouteCloseQ,},
     {.pattern = "ROUTe:OPEN?", .callback = SCPI_RouteOpenQ,},
     {.pattern = "ROUTe:OPEN:ALL", .callback = SCPI_RouteOpenAll,},
-
-    /* DMM */
-#if 0 // commented out (unused commands)
-    {.pattern = "MEASure:VOLTage:DC?", .callback = DMM_MeasureVoltageDcQ,},
-    {.pattern = "CONFigure:VOLTage:DC", .callback = DMM_ConfigureVoltageDc,},
-    {.pattern = "MEASure:VOLTage:DC:RATio?", .callback = SCPI_StubQ,},
-    {.pattern = "MEASure:VOLTage:AC?", .callback = DMM_MeasureVoltageAcQ,},
-    {.pattern = "MEASure:CURRent:DC?", .callback = SCPI_StubQ,},
-    {.pattern = "MEASure:CURRent:AC?", .callback = SCPI_StubQ,},
-    {.pattern = "MEASure:RESistance?", .callback = SCPI_StubQ,},
-    {.pattern = "MEASure:FRESistance?", .callback = SCPI_StubQ,},
-    {.pattern = "MEASure:FREQuency?", .callback = SCPI_StubQ,},
-    {.pattern = "MEASure:PERiod?", .callback = SCPI_StubQ,},
-#endif
 
     {.pattern = "SYSTem:COMMunication:TCPIP:CONTROL?", .callback = SCPI_SystemCommTcpipControlQ,},
 
