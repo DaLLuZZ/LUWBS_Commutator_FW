@@ -41,7 +41,7 @@ extern "C" {
 #define SCPI_IDN1 "MISIS"               // manufacturer
 #define SCPI_IDN2 "LUWBS_SWITCH_SYSTEM" // model
 #define SCPI_IDN3 "LUWBS001"            // serial number
-#define SCPI_IDN4 "2.0.1.1"             // subsystems revisions (hardware and firmware versions)
+#define SCPI_IDN4 "2.0.1.2"             // subsystems revisions (hardware and firmware versions)
 
 extern const scpi_command_t scpi_commands[];
 extern scpi_interface_t scpi_interface;
