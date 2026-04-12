@@ -63,7 +63,7 @@ static const osThreadAttr_t rpcTask_attributes = {
     .cb_size = sizeof(rpcTaskControlBlock),
     .stack_mem = &rpcTaskBuffer[0],
     .stack_size = sizeof(rpcTaskBuffer),
-    .priority = (osPriority_t)osPriorityNormal,
+    .priority = (osPriority_t)(osPriorityIdle + 1),
 };
 
 /**

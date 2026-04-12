@@ -17,7 +17,7 @@ static const osThreadAttr_t buttonTask_attributes = {
     .cb_size = sizeof(buttonTaskControlBlock),
     .stack_mem = &buttonTaskBuffer[0],
     .stack_size = sizeof(buttonTaskBuffer),
-    .priority = (osPriority_t)osPriorityNormal,
+    .priority = (osPriority_t)(osPriorityIdle + 1),
 };
 
 static void button_left_pressed_cb(void);
