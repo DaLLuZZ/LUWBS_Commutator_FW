@@ -248,6 +248,18 @@ static int processIoListen(scpi_t * context, user_data_t * user_data) {
         } else {
             /* connection established */
             SCPI_Event_DeviceConnected(context, newconn);
+
+#if 1
+            // optimize performance
+            // with Nagle algorithm enabled the following happens:
+            // 1. Client requests smth from instrument (for e.g. "ROUTe:CLOSe? (@0!0:3!3)\r\n")
+            // 2. The instrument sends the first byte of responce with PSH flag set
+            // 3. *PAUSE* for about 50 ms - disable Nagle algorithm to avoid the pause
+            // 4. Client sends ACK
+            // 5. The instrument sends the rest of data
+            tcp_nagle_disable(newconn->pcb.tcp);             // Disable Nagle algorithm
+#endif
+
             ip_set_option(newconn->pcb.tcp, SOF_KEEPALIVE);
             newconn->pcb.tcp->keep_idle   = SCPI_KEEP_IDLE;  // Override TCP_KEEPIDLE_DEFAULT  for this connection.
             newconn->pcb.tcp->keep_intvl  = SCPI_KEEP_INTVL; // Override TCP_KEEPINTVL_DEFAULT for this connection.
@@ -312,6 +324,15 @@ static int processIo(scpi_t * context, user_data_t * user_data) {
 
     if (buflen > 0) {
         SCPI_Input(&scpi_context, buf, buflen);
+#if 1
+        // TODO: test performance
+        if (!context->output_count && user_data->io && user_data->io->pcb.tcp) {
+            // send ACK immediately if no output is inside the command
+            user_data->io->pcb.tcp->flags &= ~TF_ACK_DELAY;
+            user_data->io->pcb.tcp->flags |= TF_ACK_NOW;
+            tcp_output(user_data->io->pcb.tcp);
+        }
+#endif
     } else {
         /* goto fail2; */
     }

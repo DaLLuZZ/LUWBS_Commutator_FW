@@ -42,6 +42,13 @@
 #include "scpi/scpi.h"
 #include "scpi-def.h"
 
+// 1 <=> ROUTe:CLOSe, ROUTe:OPEN and ROUTe:OPEN:ALL will return error code 0
+// in case there was no any error during command execution
+// ATTENTION: enabling this option contradicts SCPI-99 standart!
+#ifndef SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT
+#define SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT 0
+#endif
+
 static scpi_result_t TEST_Bool(scpi_t * context) {
     scpi_bool_t param1;
     fprintf(stderr, "TEST:BOOL\r\n"); /* debug command name */
@@ -414,6 +421,8 @@ static scpi_result_t SCPI_RouteClose(scpi_t* context)
         err.device_dependent_info = "Error during channel list parsing";
 #endif
         SCPI_ResultError(context, &err);
+        // Hack: we need to write new line manually cause the command does not contain "?" at the end
+        context->interface->write(context, SCPI_LINE_ENDING, strlen(SCPI_LINE_ENDING));
         return res;
     }
 
@@ -447,6 +456,8 @@ static scpi_result_t SCPI_RouteClose(scpi_t* context)
             err.device_dependent_info = "Error in configuration (two or more inputs are about to be closed on the same output)";
 #endif
             SCPI_ResultError(context, &err);
+            // Hack: we need to write new line manually cause the command does not contain "?" at the end
+            context->interface->write(context, SCPI_LINE_ENDING, strlen(SCPI_LINE_ENDING));
             return SCPI_RES_ERR;
         }
     }
@@ -471,14 +482,28 @@ static scpi_result_t SCPI_RouteClose(scpi_t* context)
             err.device_dependent_info = "Error in configuration (two or more outputs are about to be closed on the same input)";
 #endif
             SCPI_ResultError(context, &err);
+            // Hack: we need to write new line manually cause the command does not contain "?" at the end
+            context->interface->write(context, SCPI_LINE_ENDING, strlen(SCPI_LINE_ENDING));
             return SCPI_RES_ERR;
         }
     }
 
     // checks were passed => apply new configuration
     memcpy(scpi_route_status, loc_scpi_route_status, sizeof(scpi_route_status));
+    osDelay(2); // sleep 2 ms (2 ms max release time according to EDR201A0500 datasheet)
     SCPI_ApplyAllRoutes(); // apply new changes
     osDelay(2); // sleep 2 ms (2 ms max release time according to EDR201A0500 datasheet)
+
+#if SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT
+    scpi_error_t err;
+    err.error_code = SCPI_ERROR_NO_ERROR;
+#if USE_DEVICE_DEPENDENT_ERROR_INFORMATION
+    err.device_dependent_info = "Successfully Closed";
+#endif // USE_DEVICE_DEPENDENT_ERROR_INFORMATION
+    SCPI_ResultError(context, &err);
+    // Hack: we need to write new line manually cause the command does not contain "?" at the end
+    context->interface->write(context, SCPI_LINE_ENDING, strlen(SCPI_LINE_ENDING));
+#endif // SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT
 
     return res;
 }
@@ -502,6 +527,8 @@ static scpi_result_t SCPI_RouteOpen(scpi_t* context)
         err.device_dependent_info = "Error during channel list parsing";
 #endif
         SCPI_ResultError(context, &err);
+        // Hack: we need to write new line manually cause the command does not contain "?" at the end
+        context->interface->write(context, SCPI_LINE_ENDING, strlen(SCPI_LINE_ENDING));
         return res;
     }
 
@@ -513,6 +540,17 @@ static scpi_result_t SCPI_RouteOpen(scpi_t* context)
     }
     SCPI_ApplyAllRoutes();
     osDelay(5); // sleep 5 ms (2 ms max release time according to EDR201A0500 datasheet)
+
+#if SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT
+    scpi_error_t err;
+    err.error_code = SCPI_ERROR_NO_ERROR;
+#if USE_DEVICE_DEPENDENT_ERROR_INFORMATION
+    err.device_dependent_info = "Successfully Opened";
+#endif // USE_DEVICE_DEPENDENT_ERROR_INFORMATION
+    SCPI_ResultError(context, &err);
+    // Hack: we need to write new line manually cause the command does not contain "?" at the end
+    context->interface->write(context, SCPI_LINE_ENDING, strlen(SCPI_LINE_ENDING));
+#endif // SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT
 
     return res;
 }
@@ -624,6 +662,17 @@ static scpi_result_t SCPI_RouteOpenAll(scpi_t* context)
     }
     SCPI_OpenAllRoutes(); // open all
     osDelay(5); // sleep 5 ms (2 ms max release time according to EDR201A0500 datasheet)
+
+#if SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT
+    scpi_error_t err;
+    err.error_code = SCPI_ERROR_NO_ERROR;
+#if USE_DEVICE_DEPENDENT_ERROR_INFORMATION
+    err.device_dependent_info = "Successfully Opened All";
+#endif // USE_DEVICE_DEPENDENT_ERROR_INFORMATION
+    SCPI_ResultError(context, &err);
+    // Hack: we need to write new line manually cause the command does not contain "?" at the end
+    context->interface->write(context, SCPI_LINE_ENDING, strlen(SCPI_LINE_ENDING));
+#endif // SCPI_ENABLE_ROUTE_NO_ERROR_OUTPUT
 
     return SCPI_RES_OK;
 }
